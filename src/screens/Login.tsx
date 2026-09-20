@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import CustomInput from '../components/CustomInput';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../components/CustomButton';
+import CustomInput from '../components/CustomInput';
+import React, { useState, useEffect } from "react";
+import { useAuth } from '../contexts/AuthContext';
 
-export default function Login({ navigation }: any) {
-  const [username, setUsername] = useState('');
+export default function LoginScreen({ navigation }: any) {
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [contador, setContador] = useState(0);
   const [greeting, setGreeting] = useState('');
+  const [username, setUsername] = useState('');
 
-  /* 
-    useEffect sin arreglo de dependencias:
-    Se ejecuta tras cada renderizado del componente al interactuar con el formulario.
-  */
   useEffect(() => {
-    console.log("Componente renderizado (se modificó el estado local)");
+    console.log("Componente renderizado (se modifico el estado local)");
   });
 
-  /* 
-    useEffect con arreglo de dependencias vacío []:
-    Se ejecuta una sola vez al cargar la pantalla para calcular la hora del sistema.
-  */
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour >= 6 && hour < 12) {
@@ -32,9 +30,13 @@ export default function Login({ navigation }: any) {
     }
   }, []);
 
-  const handleLogin = () => {
-    if (username && password) {
-      navigation.replace('UserTabs');
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+      navigation.replace("HomeTab", { screen: "Home", params: { email: email } });
+    }
+    catch (error: any) {
+      console.log("Usuario no tiene acceso");
     }
   };
 

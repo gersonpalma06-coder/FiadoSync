@@ -5,34 +5,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/StackNavigator';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import { useAuth } from '../contexts/AuthContext'; 
 
 type RegisterProps = NativeStackScreenProps<RootStackParamList, 'RegisterScreen'>;
 
 export default function Register({ navigation }: RegisterProps) {
+  const { register } = useAuth(); 
+
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleRegister = () => {
-    if (!email.trim() || !password.trim()) {
-      alert('Por favor, ingresa tu correo y contraseña.');
-      return;
+  const handleRegister = async () => {
+    try {
+      await register(email, password);
+      navigation.navigate("LoginScreen"); 
     }
-
-    if (password !== confirmPassword) {
-      alert('Las contraseñas no coinciden.');
-      return;
+    catch (error: any) {
+      console.error("Error al registrar usuario:", error.message);
     }
-
-    (navigation as any).replace('UserTabs', { email });
   };
 
   const handleGoToLogin = () => {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      (navigation as any).navigate('LoginScreen');
+      navigation.navigate('LoginScreen');
     }
   };
 
@@ -50,12 +49,14 @@ export default function Register({ navigation }: RegisterProps) {
 
           <View style={styles.form}>
             <CustomInput
+              label="Nombre" 
               placeholder="Nombre de usuario o negocio"
               value={nombre}
               onChangeText={setNombre}
             />
 
             <CustomInput
+              label="Correo"
               placeholder="Correo electrónico"
               value={email}
               onChangeText={setEmail}
@@ -63,6 +64,7 @@ export default function Register({ navigation }: RegisterProps) {
             />
 
             <CustomInput
+              label="Contraseña"
               placeholder="Contraseña"
               value={password}
               onChangeText={setPassword}
@@ -70,6 +72,7 @@ export default function Register({ navigation }: RegisterProps) {
             />
 
             <CustomInput
+              label="Confirmar contraseña"
               placeholder="Confirmar contraseña"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
