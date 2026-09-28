@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Alert, ScrollView, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomInput from './CustomInput';
 import CustomButton from './CustomButton';
@@ -26,8 +19,8 @@ export default function AddClientModal({
   onClose,
   onClientAdded,
 }: AddClientModalProps) {
+  
   const { isDark } = useTheme();
-
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');

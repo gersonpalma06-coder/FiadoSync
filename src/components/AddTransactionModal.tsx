@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, Alert, ScrollView,} from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 import CustomInput from './CustomInput';
 import CustomButton from './CustomButton';
 import ThemedText from './ThemedText';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { crearTransaccion } from '../services/databaseService';
+import { SyncService } from '../utils/SyncService';
 
 interface ClientOption {
   id: string;
@@ -54,27 +56,61 @@ export default function AddTransactionModal({
     }
 
     setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('No hay sesión activa');
 
-      await crearTransaccion({
-        user_id: session.user.id,
+    try {
+      // 1. Verificar estado de la red
+      const netState = await NetInfo.fetch();
+
+      // 2. Obtener sesión actual
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      // VALIDACIÓN: Si no hay userId, se detiene la ejecución y TypeScript confirma que userId es string
+      if (!userId) {
+        Alert.alert('Error de Sesión', 'No se encontró un usuario activo. Inicia sesión nuevamente.');
+        return;
+      }
+
+      const transaccionData = {
+        user_id: userId, 
         cliente_id: clienteId,
         tipo,
         monto: montoNum,
         descripcion: descripcion.trim() || (tipo === 'fiado' ? 'Fiado de mercadería' : 'Abono a cuenta'),
-      });
+      };
 
-      Alert.alert(
-        '¡Éxito!',
-        tipo === 'fiado' ? 'Fiado registrado correctamente.' : 'Abono registrado correctamente.'
-      );
+      // 3. Evaluar conectividad
+      if (netState.isConnected) {
+        try {
+          await crearTransaccion(transaccionData);
+
+          Alert.alert(
+            '¡Éxito!',
+            tipo === 'fiado' ? 'Fiado registrado en la nube.' : 'Abono registrado en la nube.'
+          );
+        } catch (onlineError: any) {
+          console.log('Error al enviar a nube, respaldando offline:', onlineError?.message);
+          await SyncService.saveToOfflineQueue(transaccionData);
+
+          Alert.alert(
+            'Guardado Local',
+            'Ocurrió un problema de señal, pero la transacción se guardó en el teléfono. Se subirá al reconectarte.'
+          );
+        }
+      } else {
+        await SyncService.saveToOfflineQueue(transaccionData);
+
+        Alert.alert(
+          'Modo Offline',
+          'Transacción guardada localmente. Se sincronizará en segundo plano en cuanto recuperes internet.'
+        );
+      }
+
       resetForm();
       onTransactionAdded();
       onClose();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'No se pudo guardar la transacción.');
+      Alert.alert('Error', error.message || 'No se pudo procesar la transacción.');
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from '@expo/vector-icons';
 import Profile from "../screens/features/Profile";
 import Settings from "../screens/features/Settings";
+import ExploreScreen from "../screens/ExploreScreen";
 import Home from "../screens/Home";
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,6 +12,7 @@ import { translations } from '../utils/translations';
 // 1. Declarar el tipado de las pantallas con sus parámetros
 export type TabsParamList = {
   HomeTab: { email?: string };
+  ExploreScreen: undefined;
   Profile: { email?: string };
   Settings: undefined;
 };
@@ -22,7 +24,7 @@ const Tab = createBottomTabNavigator<TabsParamList>();
 export default function TabNavigator({ route }: any) {
   const userEmail = route?.params?.email;
 
- const { isDark } = useTheme();
+  const { isDark } = useTheme();
   const { language } = useLanguage();
   const t = translations[language as 'es' | 'en'] || translations.es;
 
@@ -41,6 +43,8 @@ export default function TabNavigator({ route }: any) {
 
           if (route.name === "HomeTab") {
             iconName = focused ? "home" : "home-outline";
+          } else if (route.name === "ExploreScreen") {
+            iconName = focused ? "people" : "people-outline";
           } else if (route.name === "Profile") {
             iconName = focused ? "person" : "person-outline";
           } else if (route.name === "Settings") {
@@ -56,6 +60,11 @@ export default function TabNavigator({ route }: any) {
         component={Home} 
         initialParams={{ email: userEmail }}
         options={{ title: (t as any).homeTab || 'Inicio' }}
+      />
+      <Tab.Screen 
+        name="ExploreScreen" 
+        component={ExploreScreen}
+        options={{ title: (t as any).exploreTab || 'Directorio' }}
       />
       <Tab.Screen 
         name="Profile" 

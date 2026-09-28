@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 const OFFLINE_QUEUE_KEY = '@fiadosync_transacciones_pendientes';
 
 export const SyncService = {
-  // 1. Guarda la transacción en el teléfono si no hay internet
+  // 1. Guarda la transacción en el almacenamiento local si no hay conexión
   saveToOfflineQueue: async (transaction: any) => {
     try {
       const existingQueue = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
@@ -19,7 +19,7 @@ export const SyncService = {
     }
   },
 
-  // 2. Lee las transacciones que están atrapadas en el teléfono
+  // 2. Lee las transacciones guardadas localmente en el teléfono
   getOfflineQueue: async () => {
     try {
       const queue = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
@@ -29,7 +29,7 @@ export const SyncService = {
     }
   },
 
-  // 3. Borra la cola de transacciones una vez que se suben al servidor
+  // 3. Limpia la cola local tras sincronizar exitosamente
   clearOfflineQueue: async () => {
     try {
       await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
@@ -43,23 +43,20 @@ export const SyncService = {
     const queue = await SyncService.getOfflineQueue();
     
     if (queue.length === 0) {
-      return; // No hay nada que sincronizar
+      return;
     }
 
     console.log(`Sincronizando ${queue.length} transacciones con Supabase...`);
 
     try {
-      // Supabase permite insertar un arreglo completo de registros de una sola vez
       const { error } = await supabase
         .from('transacciones')
         .insert(queue);
 
       if (error) throw error;
 
-      // Si no hubo errores, borramos el registro local porque ya está en la nube
       await SyncService.clearOfflineQueue();
-      console.log('¡Sincronización exitosa!');
-      
+      console.log('¡Sincronización exitosa con Supabase!');
     } catch (error) {
       console.error('Fallo al sincronizar con Supabase (posiblemente siga sin internet):', error);
     }

@@ -11,14 +11,11 @@ import { LanguageProvider } from './src/contexts/LanguageContext';
 import { SyncService } from './src/utils/SyncService';
 
 export default function App() {
-  
   useEffect(() => {
-    // Escucha en segundo plano si el teléfono pierde o recupera internet
-    const unsubscribe = NetInfo.addEventListener(state => {
-      console.log('Estado de red:', state.isConnected ? 'Conectado a Internet' : 'Sin conexión');
-      
-      // Si se conecta a WiFi o Datos móviles, sincroniza las transacciones pendientes
-      if (state.isConnected) {
+    // Escuchar cambios de red en toda la aplicación
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (state.isConnected && state.isInternetReachable !== false) {
+        console.log('📶 Conexión restablecida. Ejecutando sincronización en segundo plano...');
         SyncService.syncPendingData();
       }
     });

@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Screen from '../components/Screen';
 import ThemedText from '../components/ThemedText';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
+
 import DashboardCard from '../components/DashboardCard';
 import ClientCard from '../components/ClientCard';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,6 +16,7 @@ import AddClientModal from '../components/AddClientModal';
 import AddTransactionModal from '../components/AddTransactionModal';
 import { obtenerClientesConSaldo, obtenerResumenDashboard } from '../services/databaseService';
 import { supabase } from '../lib/supabase';
+import { SyncService } from '../utils/SyncService';
 
 export default function Home({ navigation }: any) {
   const { isDark } = useTheme(); 
@@ -32,6 +35,38 @@ export default function Home({ navigation }: any) {
   const cargarDatos = async () => {
     setCargando(true);
     try {
+      const netState = await NetInfo.fetch();
+      const offlineQueue = await SyncService.getOfflineQueue();
+
+      // MODO OFFLINE: Calcular basándose en datos acumulados localmente
+      if (!netState.isConnected) {
+        console.log('Modo offline: sumando transacciones pendientes locales');
+        
+        let extraPendiente = 0;
+        let extraAbonado = 0;
+
+        offlineQueue.forEach((item: any) => {
+          const montoNum = Number(item.monto || 0);
+          if (item.tipo === 'fiado') {
+            extraPendiente += montoNum;
+          } else if (item.tipo === 'abono') {
+            extraAbonado += montoNum;
+            extraPendiente -= montoNum;
+          }
+        });
+
+        setTotalPendiente((prev) => Math.max(0, prev + extraPendiente));
+        setAbonadoHoy((prev) => prev + extraAbonado);
+        setCargando(false);
+        return;
+      }
+
+      // MODO ONLINE: Sincronizar cola pendiente antes de consultar Supabase
+      if (offlineQueue.length > 0) {
+        await SyncService.syncPendingData();
+      }
+
+      // Consulta remota a Supabase
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
@@ -41,15 +76,28 @@ export default function Home({ navigation }: any) {
         ]);
 
         setClientes(listaClientes || []);
-        setTotalPendiente(resumen.totalPendiente);
-        setAbonadoHoy(resumen.abonadoHoy);
+        setTotalPendiente(resumen?.totalPendiente || 0);
+        setAbonadoHoy(resumen?.abonadoHoy || 0);
       }
     } catch (error) {
-      console.error('Error al cargar datos de FiadoSync:', error);
+      console.log('Error al procesar o cargar datos:', error);
     } finally {
       setCargando(false);
     }
   };
+
+  // Escuchador de red para reconexión automática
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(async (state) => {
+      if (state.isConnected && state.isInternetReachable !== false) {
+        console.log('Conexión reestablecida. Sincronizando datos...');
+        await SyncService.syncPendingData();
+        await cargarDatos();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -95,26 +143,29 @@ export default function Home({ navigation }: any) {
         </View>
         <View style={[styles.divider, isDark && styles.darkDivider]} />
 
-        {/* Tarjetas del Dashboard con montos calculados en tiempo real */}
+        {/* TARJETA 1: Cuentas por Cobrar */}
         <DashboardCard
           title={(t as any).receivables || 'Cuentas por Cobrar'}
-          subtitle="Registra o consulta fiados pendientes"
+          subtitle="Consulta los clientes con saldos pendientes"
           valueLabel="TOTAL PENDIENTE"
           valueAmount={`L ${totalPendiente.toFixed(2)}`}
           iconName="text-box-multiple-outline"
-          onPress={() => setModalTransVisible(true)}
-          description="Presiona para registrar un fiado o abono" 
+          onPress={() => {
+            navigation.navigate('ExploreScreen');
+          }}
+          description="Ver desglose de clientes con deuda" 
           icon="text-box-multiple-outline"
         />
 
+        {/* TARJETA 2: Abonos y Pagos */}
         <DashboardCard
           title={(t as any).payments || 'Abonos y Pagos'}
-          subtitle="Registra abonos de tus clientes"
+          subtitle="Registra abonos o fiados de tus clientes"
           valueLabel="ABONADO HOY"
           valueAmount={`L ${abonadoHoy.toFixed(2)}`}
           iconName="cash-register"
           onPress={() => setModalTransVisible(true)}
-          description="Presiona para registrar un abono" 
+          description="Presiona para registrar una transacción" 
           icon="cash-register"
         />
 
@@ -125,11 +176,11 @@ export default function Home({ navigation }: any) {
           </Text>
           
           {cargando ? (
-             <ActivityIndicator size="large" color="#0052cc" style={{ marginTop: 20 }} />
+            <ActivityIndicator size="large" color="#0052cc" style={{ marginTop: 20 }} />
           ) : clientes.length === 0 ? (
-             <Text style={[styles.emptyText, isDark && styles.darkText]}>
-                Aún no tienes clientes registrados.
-             </Text>
+            <Text style={[styles.emptyText, isDark && styles.darkText]}>
+              Aún no tienes clientes registrados.
+            </Text>
           ) : (
             clientes.slice(0, 5).map((cliente) => (
               <ClientCard 
