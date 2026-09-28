@@ -16,10 +16,6 @@ export interface TransaccionPayload {
   descripcion?: string;
 }
 
-// -------------------------------------------------------------
-// CLIENTES
-// -------------------------------------------------------------
-
 // 1. Crear un nuevo cliente en Supabase
 export const crearCliente = async (payload: ClientePayload) => {
   const { data, error } = await supabase
@@ -83,10 +79,6 @@ export const obtenerClientesConSaldo = async (userId: string) => {
   });
 };
 
-// -------------------------------------------------------------
-// TRANSACCIONES (FIADOS Y ABONOS)
-// -------------------------------------------------------------
-
 // 4. Registrar una nueva transacción (Fiado o Abono)
 export const crearTransaccion = async (payload: TransaccionPayload) => {
   const { data, error } = await supabase
@@ -120,7 +112,6 @@ export const obtenerResumenDashboard = async (userId: string) => {
       totalPendiente += monto;
     } else if (t.tipo === 'abono') {
       totalPendiente -= monto;
-      // Compatible tanto con 'created_at' como con 'creado_en'
       const rawFecha = t.created_at || t.creado_en;
       if (rawFecha) {
         const fechaTransaccion = new Date(rawFecha).toISOString().split('T')[0];

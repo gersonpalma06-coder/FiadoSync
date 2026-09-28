@@ -1,6 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import React, { useState, useEffect } from "react";
@@ -8,40 +7,40 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Screen from '../components/Screen';
 import ThemedText from '../components/ThemedText';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const { isDark } = useTheme();
+  const { language } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [contador, setContador] = useState(0);
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    console.log("Componente renderizado (se modifico el estado local)");
-  });
-
-  useEffect(() => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) {
-      setGreeting('☀️ Hola ¡Buen día!');
+    const isEn = language === 'en';
+
+    if (hour >= 5 && hour < 12) {
+      setGreeting(isEn ? '☀️ Hello, Good morning!' : '☀️ Hola ¡Buen día!');
     } else if (hour >= 12 && hour < 19) {
-      setGreeting('🌤️ Hola ¡Buenas tardes!');
+      setGreeting(isEn ? '🌤️ Hello, Good afternoon!' : '🌤️ Hola ¡Buenas tardes!');
     } else {
-      setGreeting('☁️ Hola ¡Buenas noches!');
+      setGreeting(isEn ? '🌙 Hello, Good evening!' : '☁️ Hola ¡Buenas noches!');
     }
-  }, []);
+  }, [language]);
 
   const handleLogin = async () => {
     try {
       await login(email, password);
-      navigation.navigate("UserTabs", { screen: "HomeTab", params: { email} });
-    }
-    catch (error: any) {
-      console.log("Usuario no tiene acceso");
+      navigation.navigate("UserTabs", { screen: "HomeTab", params: { email } });
+    } catch (error: any) {
+      console.log("Error de autenticación:", error?.message);
     }
   };
+
+  const isEn = language === 'en';
 
   return (
     <Screen style={styles.screen}>
@@ -59,38 +58,35 @@ export default function LoginScreen({ navigation }: any) {
         </View>
 
         <CustomInput
-          label="Usuario"
-          placeholder="Ingresa tu usuario"
+          label={isEn ? "User / Email" : "Usuario"}
+          placeholder={isEn ? "Enter your user or email" : "Ingresa tu usuario"}
           value={email}
           onChangeText={setEmail}
           type="email"
         />
 
         <CustomInput
-          label="Contraseña"
-          placeholder="Ingresa tu contraseña"
+          label={isEn ? "Password" : "Contraseña"}
+          placeholder={isEn ? "Enter your password" : "Ingresa tu contraseña"}
           value={password}
           onChangeText={setPassword}
           type="password"
         />
-
-        <TouchableOpacity style={styles.forgotPasswordContainer}>
-          <Text style={[styles.linkText, isDark && styles.darkLinkText]}>
-            ¿Olvidaste tu contraseña?
-          </Text>
-        </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.registerContainer} 
           onPress={() => navigation.navigate('RegisterScreen')}
         >
           <ThemedText style={styles.registerTextBase}>
-            ¿No tienes una cuenta? <Text style={[styles.linkText, styles.boldLink, isDark && styles.darkLinkText]}>Regístrate</Text>
+            {isEn ? "¿Don't have an account? " : "¿No tienes una cuenta? "}
+            <Text style={[styles.linkText, styles.boldLink, isDark && styles.darkLinkText]}>
+              {isEn ? 'Register' : 'Regístrate'}
+            </Text>
           </ThemedText>
         </TouchableOpacity>
 
         <CustomButton
-          title="Iniciar sesión"
+          title={isEn ? "Sign In" : "Iniciar sesión"}
           onPress={handleLogin}
           variant="primary" 
         />
@@ -104,7 +100,6 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    
   },
   container: {
     flexGrow: 1,
@@ -127,7 +122,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
-    
   },
   divider: {
     height: 3,
@@ -138,18 +132,13 @@ const styles = StyleSheet.create({
   darkDivider: {
     backgroundColor: '#3b82f6',
   },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-start',
-    marginBottom: 20,
-  },
   registerContainer: {
-    marginTop: 16,
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 24,
     alignItems: 'center',
   },
   registerTextBase: {
     fontSize: 14,
-    
   },
   linkText: {
     color: '#0052cc', 

@@ -36,7 +36,7 @@ export default function CustomInput({
       return 'Correo inválido';
     }
 
-    if (type === "password" && value.length < 4) {
+    if (type === "password" && value.length < 6) {
       return "La contraseña es débil";
     }
 

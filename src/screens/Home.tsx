@@ -5,7 +5,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
-
 import DashboardCard from '../components/DashboardCard';
 import ClientCard from '../components/ClientCard';
 import { useTheme } from '../contexts/ThemeContext';
@@ -37,8 +36,6 @@ export default function Home({ navigation }: any) {
     try {
       const netState = await NetInfo.fetch();
       const offlineQueue = await SyncService.getOfflineQueue();
-
-      // MODO OFFLINE: Calcular basándose en datos acumulados localmente
       if (!netState.isConnected) {
         console.log('Modo offline: sumando transacciones pendientes locales');
         
@@ -61,12 +58,10 @@ export default function Home({ navigation }: any) {
         return;
       }
 
-      // MODO ONLINE: Sincronizar cola pendiente antes de consultar Supabase
       if (offlineQueue.length > 0) {
         await SyncService.syncPendingData();
       }
 
-      // Consulta remota a Supabase
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
@@ -86,7 +81,6 @@ export default function Home({ navigation }: any) {
     }
   };
 
-  // Escuchador de red para reconexión automática
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(async (state) => {
       if (state.isConnected && state.isInternetReachable !== false) {
@@ -153,7 +147,7 @@ export default function Home({ navigation }: any) {
           onPress={() => {
             navigation.navigate('ExploreScreen');
           }}
-          description="Ver desglose de clientes con deuda" 
+          description="Ver desglose de clientes con deuda"
           icon="text-box-multiple-outline"
         />
 
@@ -203,7 +197,7 @@ export default function Home({ navigation }: any) {
         <Ionicons name="person-add" size={26} color="#ffffff" />
       </TouchableOpacity>
 
-      {/* Modales */}
+      {/* Modal agregar clienye nuevo */}
       <AddClientModal 
         visible={modalClientVisible} 
         onClose={() => setModalClientVisible(false)} 

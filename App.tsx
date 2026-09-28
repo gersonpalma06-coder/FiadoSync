@@ -12,7 +12,6 @@ import { SyncService } from './src/utils/SyncService';
 
 export default function App() {
   useEffect(() => {
-    // Escuchar cambios de red en toda la aplicación
     const unsubscribe = NetInfo.addEventListener((state) => {
       if (state.isConnected && state.isInternetReachable !== false) {
         console.log('📶 Conexión restablecida. Ejecutando sincronización en segundo plano...');

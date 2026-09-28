@@ -64,7 +64,7 @@ export default function TabNavigator({ route }: any) {
       <Tab.Screen 
         name="ExploreScreen" 
         component={ExploreScreen}
-        options={{ title: (t as any).exploreTab || 'Directorio' }}
+        options={{ title: language === 'en' ? 'Directory' : ((t as any).exploreTab || 'Directorio') }}
       />
       <Tab.Screen 
         name="Profile" 
