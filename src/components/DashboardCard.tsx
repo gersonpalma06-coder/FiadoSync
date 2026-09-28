@@ -7,6 +7,8 @@ interface DashboardCardProps {
   subtitle: string;
   valueLabel?: string;
   valueAmount?: string;
+  icon: string;
+  description: string;
   iconName: keyof typeof MaterialCommunityIcons.glyphMap;
   onPress: () => void;
 }

@@ -5,15 +5,18 @@ import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import React, { useState, useEffect } from "react";
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import Screen from '../components/Screen';
+import ThemedText from '../components/ThemedText';
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
+  const { isDark } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [contador, setContador] = useState(0);
   const [greeting, setGreeting] = useState('');
-  const [username, setUsername] = useState('');
 
   useEffect(() => {
     console.log("Componente renderizado (se modifico el estado local)");
@@ -33,7 +36,7 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     try {
       await login(email, password);
-      navigation.replace("HomeTab", { screen: "Home", params: { email: email } });
+      navigation.navigate("UserTabs", { screen: "HomeTab", params: { email} });
     }
     catch (error: any) {
       console.log("Usuario no tiene acceso");
@@ -41,54 +44,70 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      
-      <Image
-        source={require('../../assets/Logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+    <Screen style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        
+        <Image
+          source={require('../../assets/Logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-      <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>{greeting}</Text>
-        <View style={styles.divider} />
-      </View>
+        <View style={styles.greetingContainer}>
+          <ThemedText style={styles.greetingText}>{greeting}</ThemedText>
+          <View style={[styles.divider, isDark && styles.darkDivider]} />
+        </View>
 
-      <CustomInput
-        label="Usuario"
-        placeholder="Ingresa tu usuario"
-        value={username}
-        onChangeText={setUsername}
-        type="email"
-      />
+        <CustomInput
+          label="Usuario"
+          placeholder="Ingresa tu usuario"
+          value={email}
+          onChangeText={setEmail}
+          type="email"
+        />
 
-      <CustomInput
-        label="Contraseña"
-        placeholder="Ingresa tu contraseña"
-        value={password}
-        onChangeText={setPassword}
-        type="password"
-      />
+        <CustomInput
+          label="Contraseña"
+          placeholder="Ingresa tu contraseña"
+          value={password}
+          onChangeText={setPassword}
+          type="password"
+        />
 
-      <TouchableOpacity style={styles.forgotPasswordContainer}>
-        <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.forgotPasswordContainer}>
+          <Text style={[styles.linkText, isDark && styles.darkLinkText]}>
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </TouchableOpacity>
 
-      <CustomButton
-        title="Iniciar sesión"
-        onPress={handleLogin}
-        variant="primary"
-      />
+        <TouchableOpacity 
+          style={styles.registerContainer} 
+          onPress={() => navigation.navigate('RegisterScreen')}
+        >
+          <ThemedText style={styles.registerTextBase}>
+            ¿No tienes una cuenta? <Text style={[styles.linkText, styles.boldLink, isDark && styles.darkLinkText]}>Regístrate</Text>
+          </ThemedText>
+        </TouchableOpacity>
 
-      <StatusBar style="auto" />
-    </ScrollView>
+        <CustomButton
+          title="Iniciar sesión"
+          onPress={handleLogin}
+          variant="primary" 
+        />
+
+        <StatusBar style="auto" />
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: '#ffffff',
     paddingHorizontal: 28,
     paddingTop: 30,
     paddingBottom: 30,
@@ -107,8 +126,8 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2d3748',
     marginBottom: 8,
+    
   },
   divider: {
     height: 3,
@@ -116,13 +135,31 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 2,
   },
+  darkDivider: {
+    backgroundColor: '#3b82f6',
+  },
   forgotPasswordContainer: {
     alignSelf: 'flex-start',
     marginBottom: 20,
   },
-  forgotPasswordText: {
-    color: '#0052cc',
+  registerContainer: {
+    marginTop: 16,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  registerTextBase: {
+    fontSize: 14,
+    
+  },
+  linkText: {
+    color: '#0052cc', 
     fontSize: 14,
     fontWeight: '500',
+  },
+  boldLink: {
+    fontWeight: 'bold',
+  },
+  darkLinkText: {
+    color: '#3b82f6', 
   },
 });

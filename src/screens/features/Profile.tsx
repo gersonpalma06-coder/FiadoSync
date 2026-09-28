@@ -1,14 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { TabsParamList } from '../../navigation/TabsNavigator';
 import CustomButton from '../../components/CustomButton';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { translations } from '../../utils/translations';
+import Screen from '../../components/Screen';
+import ThemedText from '../../components/ThemedText';
 
 type ProfileProps = BottomTabScreenProps<TabsParamList, 'Profile'>;
 
 export default function Profile({ route, navigation }: ProfileProps) {
-  const email = route.params?.email ?? "usuario@fiadosync.com";
+  const { isDark } = useTheme(); 
+  const { language } = useLanguage();
+  const t = translations[language as 'es' | 'en'] || translations.es;
+
+  const { email } = route.params;
 
   const handleLogout = () => {
     (navigation as any).getParent()?.replace('LoginScreen');
@@ -27,44 +36,53 @@ export default function Profile({ route, navigation }: ProfileProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Ionicons name="person-circle-outline" size={80} color="#0052cc" style={styles.avatar} />
+    <Screen style={styles.container}>
+      <View style={[styles.card, isDark && styles.darkCard]}>
+        <Ionicons 
+          name="person-circle-outline" 
+          size={80} 
+          color={isDark ? "#3b82f6" : "#0052cc"} 
+          style={styles.avatar} 
+        />
         
-        <Text style={styles.title}>¡Bienvenido!</Text>
-        <Text style={styles.emailText}>{email}</Text>
+        <ThemedText style={styles.title}>
+          {(t as any).welcomeProfile || '¡Bienvenido!'}
+        </ThemedText>
+        <ThemedText>
+          {email}
+        </ThemedText>
 
         <View style={styles.buttonContainer}>
           <CustomButton 
-            title="Ir a Preferencias de Usuario" 
+            title={(t as any).userPreferences || 'Ir a Preferencias de Usuario'} 
             onPress={handleEditProfile} 
             variant="primary"
           />   
 
           <CustomButton 
-            title="Ir Atrás" 
+            title={(t as any).goBack || 'Ir Atrás'} 
             onPress={handleGoBack} 
             variant="secondary"
           />
 
           <CustomButton 
-            title="Cerrar Sesión" 
+            title={(t as any).logout || 'Cerrar Sesión'} 
             onPress={handleLogout} 
             variant="tertiary"
           /> 
+
         </View>
       </View>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f4f6f9',
     padding: 20,
+    
   },
   card: {
     width: '100%',
@@ -79,20 +97,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  darkCard: {
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
   avatar: {
     marginBottom: 8,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1a1a1a',
     marginBottom: 4,
+    
   },
   emailText: {
     fontSize: 15,
     color: '#0052cc',
     fontWeight: '600',
     marginBottom: 24,
+  },
+  darkEmailText: {
+    color: '#3b82f6',
   },
   buttonContainer: {
     width: '100%',

@@ -4,6 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import Profile from "../screens/features/Profile";
 import Settings from "../screens/features/Settings";
 import Home from "../screens/Home";
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../utils/translations';
 
 // 1. Declarar el tipado de las pantallas con sus parámetros
 export type TabsParamList = {
@@ -19,12 +22,20 @@ const Tab = createBottomTabNavigator<TabsParamList>();
 export default function TabNavigator({ route }: any) {
   const userEmail = route?.params?.email;
 
+ const { isDark } = useTheme();
+  const { language } = useLanguage();
+  const t = translations[language as 'es' | 'en'] || translations.es;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false, 
-        tabBarActiveTintColor: '#0052cc', 
-        tabBarInactiveTintColor: '#8c8c8c',
+        tabBarActiveTintColor: isDark ? '#60a5fa' : '#0052cc', 
+        tabBarInactiveTintColor: isDark ? '#94a3b8' : '#8c8c8c',
+        tabBarStyle: {
+          backgroundColor: isDark ? '#1e293b' : '#ffffff',
+          borderTopColor: isDark ? '#334155' : '#e2e8f0',
+        },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "help-outline";
 
@@ -44,18 +55,18 @@ export default function TabNavigator({ route }: any) {
         name="HomeTab" 
         component={Home} 
         initialParams={{ email: userEmail }}
-        options={{ title: 'Inicio' }}
+        options={{ title: (t as any).homeTab || 'Inicio' }}
       />
       <Tab.Screen 
         name="Profile" 
         component={Profile} 
         initialParams={{ email: userEmail }}
-        options={{ title: 'Perfil' }}
+        options={{ title: (t as any).profileTab || 'Perfil' }}
       />
       <Tab.Screen 
         name="Settings" 
         component={Settings}
-        options={{ title: 'Ajustes' }}
+        options={{ title: (t as any).settingsTab || 'Ajustes' }}
       />
     </Tab.Navigator>
   );
